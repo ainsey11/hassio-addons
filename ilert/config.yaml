@@ -1,0 +1,23 @@
+name: "iLert Integration"
+version: "1.0.0"
+slug: "ilert"
+description: "iLert integration for Home Assistant"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+init: false
+startup: application
+boot: auto
+hassio_api: true
+options:
+  api_key: ""
+  log_level: "info"
+  ilert_email: ""
+
+schema:
+  api_key: str
+  log_level: list(debug|info|warning|error)?
+  ilert_email: str
