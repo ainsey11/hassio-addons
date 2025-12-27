@@ -25,7 +25,7 @@ jobs:
       addons: ${{ steps.changes.outputs.addons }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
       released: ${{ steps.create.outputs.released }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -172,7 +172,7 @@ jobs:
           - i386
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Check arch support
         id: check
@@ -237,7 +237,7 @@ jobs:
 
       - name: Build and push
         if: steps.check.outputs.supported == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.addon.name }}
           file: ./${{ matrix.addon.name }}/Dockerfile
@@ -283,7 +283,7 @@ jobs:
         addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -315,13 +315,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git pull --rebase  # Get any other addon updates
-
           if git diff --quiet; then
             echo "No changes to commit"
           else
             git add ${{ matrix.addon.name }}/config.yaml
             git commit -m "chore(${{ matrix.addon.name }}): add pre-built image v${{ matrix.addon.version }}"
+            git pull --rebase origin ${{ github.ref_name }} || true  # Get any other addon updates
             git push
             echo "✅ Updated ${{ matrix.addon.name }}/config.yaml with image reference"
           fi
