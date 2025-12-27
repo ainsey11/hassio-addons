@@ -16,9 +16,51 @@
       "problemMatcher": []
     },
     {
+      "label": "Setup Local Addon",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/.devcontainer/poststart.sh",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Reload Addons Repository",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/.devcontainer/poststart.sh && echo 'Addons reloaded successfully'",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install Addon",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/.devcontainer/poststart.sh && ha addons install \"local_${input:addonName}\" 2>&1",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Start Addon",
       "type": "shell",
-      "command": "ha addons stop \"local_${input:addonName}\"; ha addons start \"local_${input:addonName}\"; docker logs --follow \"addon_local_${input:addonName}\"",
+      "command": "ha addons start \"local_${input:addonName}\" && sleep 2 && docker logs --follow \"addon_local_${input:addonName}\"",
       "group": {
         "kind": "test",
         "isDefault": false
@@ -33,9 +75,9 @@
       }
     },
     {
-      "label": "Rebuild and Start Addon",
+      "label": "Restart Addon",
       "type": "shell",
-      "command": "ha addons rebuild --force \"local_${input:addonName}\"; ha addons start \"local_${input:addonName}\"; docker logs --follow \"addon_local_${input:addonName}\"",
+      "command": "ha addons restart \"local_${input:addonName}\" && sleep 2 && docker logs --follow \"addon_local_${input:addonName}\"",
       "group": {
         "kind": "test",
         "isDefault": false
@@ -43,6 +85,65 @@
       "presentation": {
         "reveal": "always",
         "panel": "new"
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "reevaluateOnRerun": false
+      }
+    },
+    {
+      "label": "Rebuild Addon",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/.devcontainer/poststart.sh && (ha addons info \"local_${input:addonName}\" 2>&1 | grep -q 'version: ' || ha addons install \"local_${input:addonName}\") && (ha addons rebuild \"local_${input:addonName}\" 2>&1 || ha addons update \"local_${input:addonName}\")",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Rebuild and Start Addon",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/.devcontainer/poststart.sh && (ha addons info \"local_${input:addonName}\" 2>&1 | grep -q 'version: ' || ha addons install \"local_${input:addonName}\") && (ha addons rebuild \"local_${input:addonName}\" 2>&1 || ha addons update \"local_${input:addonName}\") && ha addons start \"local_${input:addonName}\" && sleep 2 && docker logs --follow \"addon_local_${input:addonName}\"",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "View Addon Logs",
+      "type": "shell",
+      "command": "docker logs --follow \"addon_local_${input:addonName}\"",
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Uninstall Addon",
+      "type": "shell",
+      "command": "ha addons uninstall \"local_${input:addonName}\"",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
       },
       "problemMatcher": []
     }
