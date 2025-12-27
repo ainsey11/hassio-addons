@@ -15,6 +15,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write # Required for cosign OIDC signing
 
 jobs:
   # Detect which addons changed and need releasing
@@ -286,17 +287,23 @@ jobs:
           echo "  - ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}"
           echo "  - ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:latest"
 
-      - name: Sign image with Sigstore
+      - name: Install cosign
+        if: steps.check.outputs.supported == 'true'
+        uses: sigstore/cosign-installer@v3.1.1
+        with:
+          cosign-release: "v2.2.0"
+
+      - name: Sign container image
         if: steps.check.outputs.supported == 'true'
         env:
-          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_EXPERIMENTAL: 1
         run: |
-          # Install cosign
-          curl -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /tmp/cosign
-          chmod +x /tmp/cosign
-
-          # Sign the image (keyless signing with GitHub OIDC)
-          /tmp/cosign sign --yes ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}
+          echo "Signing container image..."
+          cosign sign --yes \
+            -a "repo=${{ github.repository }}" \
+            -a "workflow=${{ github.workflow }}" \
+            -a "ref=${{ github.sha }}" \
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}
           echo "✅ Signed ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}"
 
   # Update config.yaml with image references (enables pre-built images)
