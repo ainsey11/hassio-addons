@@ -87,7 +87,7 @@ jobs:
       - name: Install dependencies
         if: steps.check.outputs.has_npm == 'true'
         working-directory: ./${{ matrix.addon.name }}
-        run: npm ci
+        run: npm install
 
       - name: Lint
         if: steps.check.outputs.has_npm == 'true'
