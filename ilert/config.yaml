@@ -33,11 +33,3 @@ schema:
   poll_interval: int?
   log_level: list(debug|info|warning|error)?
   calendar_entity: str?
-
-# Pre-built images from GitHub Container Registry
-image: ghcr.io/ainsey11/ilert-{arch}:3.3.2
-  armhf: ghcr.io/ainsey11/ilert-armhf:3.3.2
-  armv7: ghcr.io/ainsey11/ilert-armv7:3.3.2
-  aarch64: ghcr.io/ainsey11/ilert-aarch64:3.3.2
-  amd64: ghcr.io/ainsey11/ilert-amd64:3.3.2
-  i386: ghcr.io/ainsey11/ilert-i386:3.3.2
