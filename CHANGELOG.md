@@ -9,6 +9,16 @@ and each addon follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## iLert Integration
 
+### [3.3.1] - 2025-12-27
+
+### Added
+
+- Warnings for missing MQTT configuration (username/password)
+
+### Fixed
+
+- MQTT configuration now properly loaded from environment variables
+
 ### [3.3.0] - 2025-12-27
 
 ### Added
