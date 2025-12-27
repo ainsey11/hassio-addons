@@ -1,9 +1,5 @@
 # Ainsey11 Home Assistant Addons
 
-[![Release](https://img.shields.io/github/v/release/Ainsey11/hassio-addons?style=flat-square)](https://github.com/Ainsey11/hassio-addons/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/Ainsey11/hassio-addons/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/Ainsey11/hassio-addons/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Ainsey11/hassio-addons?style=flat-square)](LICENSE)
-
 Custom Home Assistant addons repository.
 
 ## Installation
