@@ -1,0 +1,96 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "api_key": "iLert API Key",
+          "ilert_email": "iLert Email",
+          "mqtt_host": "MQTT Host",
+          "mqtt_port": "MQTT Port",
+          "mqtt_user": "MQTT Username",
+          "mqtt_password": "MQTT Password",
+          "poll_interval": "Poll Interval (seconds)",
+          "log_level": "Log Level",
+          "calendar_entity": "Calendar Entity (Optional)"
+        },
+        "data_description": {
+          "api_key": "Your iLert API key (Bearer token). Get it from iLert → Settings → API Keys.",
+          "ilert_email": "Your iLert account email address.",
+          "mqtt_host": "MQTT broker hostname. Default: core-mosquitto",
+          "mqtt_port": "MQTT broker port. Default: 1883",
+          "mqtt_user": "MQTT username configured in Mosquitto addon.",
+          "mqtt_password": "MQTT password configured in Mosquitto addon.",
+          "poll_interval": "How often to fetch data from iLert. Default: 300",
+          "log_level": "Logging verbosity. Use 'debug' to troubleshoot.",
+          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "api_key": "iLert API Key",
+          "ilert_email": "iLert Email",
+          "mqtt_host": "MQTT Host",
+          "mqtt_port": "MQTT Port",
+          "mqtt_user": "MQTT Username",
+          "mqtt_password": "MQTT Password",
+          "poll_interval": "Poll Interval (seconds)",
+          "log_level": "Log Level",
+          "calendar_entity": "Calendar Entity (Optional)"
+        },
+        "data_description": {
+          "api_key": "Your iLert API key (Bearer token). Get it from iLert → Settings → API Keys.",
+          "ilert_email": "Your iLert account email address.",
+          "mqtt_host": "MQTT broker hostname. Default: core-mosquitto",
+          "mqtt_port": "MQTT broker port. Default: 1883",
+          "mqtt_user": "MQTT username configured in Mosquitto addon.",
+          "mqtt_password": "MQTT password configured in Mosquitto addon.",
+          "poll_interval": "How often to fetch data from iLert. Default: 300",
+          "log_level": "Logging verbosity. Use 'debug' to troubleshoot.",
+          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable."
+        }
+      }
+    }
+  },
+  "configuration": {
+    "api_key": {
+      "name": "iLert API Key",
+      "description": "Your iLert API key (Bearer token). Get it from iLert → Settings → API Keys."
+    },
+    "ilert_email": {
+      "name": "iLert Email",
+      "description": "Your iLert account email address."
+    },
+    "mqtt_host": {
+      "name": "MQTT Host",
+      "description": "MQTT broker hostname. Default: core-mosquitto (the Mosquitto addon)."
+    },
+    "mqtt_port": {
+      "name": "MQTT Port",
+      "description": "MQTT broker port. Default: 1883."
+    },
+    "mqtt_user": {
+      "name": "MQTT Username",
+      "description": "MQTT username configured in Mosquitto addon."
+    },
+    "mqtt_password": {
+      "name": "MQTT Password",
+      "description": "MQTT password configured in Mosquitto addon."
+    },
+    "poll_interval": {
+      "name": "Poll Interval",
+      "description": "How often to fetch data from iLert (in seconds). Default: 300 (5 minutes)."
+    },
+    "log_level": {
+      "name": "Log Level",
+      "description": "Logging verbosity. Use 'debug' to troubleshoot issues."
+    },
+    "calendar_entity": {
+      "name": "Calendar Entity (Optional)",
+      "description": "Sync on-call shifts to a Local Calendar. First create a Local Calendar integration in HA (Settings → Devices & Services → Add Integration → Local Calendar), then enter the entity ID here (e.g., calendar.ilert_on_call). Leave empty to disable calendar sync."
+    }
+  }
+}
