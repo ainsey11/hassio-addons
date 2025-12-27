@@ -1,0 +1,72 @@
+{
+  "configuration": {
+    "azure_tenant_id": {
+      "name": "Azure Tenant ID",
+      "description": "Your Azure Active Directory Tenant ID. Found in Azure Portal → Azure Active Directory → Properties → Tenant ID."
+    },
+    "azure_client_id": {
+      "name": "Azure Client ID",
+      "description": "Your Azure App Registration Client ID (Application ID). Create an App Registration in Azure Portal → Azure Active Directory → App Registrations, then copy the Application (client) ID."
+    },
+    "azure_client_secret": {
+      "name": "Azure Client Secret",
+      "description": "Your Azure App Registration Client Secret. Generate one in your App Registration → Certificates & secrets → Client secrets → New client secret."
+    },
+    "azure_subscription_id": {
+      "name": "Azure Subscription ID",
+      "description": "Your Azure Subscription ID. Found in Azure Portal → Subscriptions → Overview → Subscription ID."
+    },
+    "azure_resource_group": {
+      "name": "Azure Resource Group",
+      "description": "The name of the Azure Resource Group that contains your DNS zones. Found in Azure Portal → DNS zones → Overview → Resource group."
+    },
+    "domains": {
+      "name": "DNS Domains",
+      "description": "List of DNS zones and records to update. Each entry should specify a zone and the records within that zone. Use '@' for root domain, specific names for subdomains, or '*' for wildcard records."
+    },
+    "ipv4_enabled": {
+      "name": "Enable IPv4 Updates",
+      "description": "Enable automatic IPv4 (A record) updates when your public IPv4 address changes. Default: true"
+    },
+    "ipv6_enabled": {
+      "name": "Enable IPv6 Updates",
+      "description": "Enable automatic IPv6 (AAAA record) updates when your public IPv6 address changes. Requires IPv6 internet connectivity. Default: false"
+    },
+    "check_interval": {
+      "name": "Check Interval",
+      "description": "How often to check for IP address changes (in seconds). Lower values mean faster updates but more API calls. Default: 300 (5 minutes)"
+    },
+    "ip_services": {
+      "name": "IPv4 Detection Services",
+      "description": "External services used to detect your public IPv4 address. Multiple services provide redundancy. Default services are reliable and free."
+    },
+    "ipv6_services": {
+      "name": "IPv6 Detection Services",
+      "description": "External services used to detect your public IPv6 address. Multiple services provide redundancy. Only used when IPv6 is enabled."
+    },
+    "mqtt_host": {
+      "name": "MQTT Host",
+      "description": "MQTT broker hostname. Default: core-mosquitto (the official Mosquitto addon). Change if using external MQTT broker."
+    },
+    "mqtt_port": {
+      "name": "MQTT Port",
+      "description": "MQTT broker port. Default: 1883 for standard MQTT. Use 8883 for MQTT over TLS."
+    },
+    "mqtt_user": {
+      "name": "MQTT Username",
+      "description": "MQTT username configured in your Mosquitto addon or external MQTT broker. Leave empty if authentication is disabled."
+    },
+    "mqtt_password": {
+      "name": "MQTT Password",
+      "description": "MQTT password configured in your Mosquitto addon or external MQTT broker. Leave empty if authentication is disabled."
+    },
+    "log_level": {
+      "name": "Log Level",
+      "description": "Logging verbosity. Use 'info' for normal operation, 'debug' to troubleshoot DNS update issues, or 'warning' for minimal logging."
+    },
+    "calendar_entity": {
+      "name": "Calendar Entity (Optional)",
+      "description": "Home Assistant Local Calendar entity ID to log DNS update events. Example: 'calendar.azure_ddns_events'. Leave empty to disable calendar integration."
+    }
+  }
+}

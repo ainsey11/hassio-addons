@@ -1,0 +1,60 @@
+name: "Azure Dynamic DNS"
+version: "1.0.0"
+slug: "azure-ddns"
+description: "Dynamic DNS updater for Azure DNS zones - automatically updates A records when your public IP changes"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+init: false
+startup: application
+boot: auto
+hassio_api: true
+homeassistant_api: true
+options:
+  azure_tenant_id: ""
+  azure_client_id: ""
+  azure_client_secret: ""
+  azure_subscription_id: ""
+  azure_resource_group: ""
+  domains: []
+  ipv4_enabled: true
+  ipv6_enabled: false
+  check_interval: 300
+  ip_services:
+    - "https://api.ipify.org"
+    - "https://icanhazip.com"
+  ipv6_services:
+    - "https://api64.ipify.org"
+    - "https://ipv6.icanhazip.com"
+  mqtt_host: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_password: ""
+  log_level: "info"
+  calendar_entity: ""
+schema:
+  azure_tenant_id: str
+  azure_client_id: str
+  azure_client_secret: password
+  azure_subscription_id: str
+  azure_resource_group: str
+  domains:
+    - zone: str
+      records:
+        - str
+  ipv4_enabled: bool?
+  ipv6_enabled: bool?
+  check_interval: int?
+  ip_services:
+    - url
+  ipv6_services:
+    - url
+  mqtt_host: str?
+  mqtt_port: port?
+  mqtt_user: str?
+  mqtt_password: password?
+  log_level: list(debug|info|warning|error)?
+  calendar_entity: str?

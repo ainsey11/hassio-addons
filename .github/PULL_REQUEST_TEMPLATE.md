@@ -8,7 +8,7 @@
 
 - [ ] `azure-ddns`
 - [ ] `ilert`
-- [ ] Other: ______
+- [ ] Other: **\_\_**
 
 ## Type of Change
 
