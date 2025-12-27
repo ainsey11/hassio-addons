@@ -1,7 +1,7 @@
 name: "iLert Integration"
-version: "1.0.0"
+version: "3.3.0"
 slug: "ilert"
-description: "iLert integration for Home Assistant"
+description: "iLert integration - exposes on-call, incidents, alerts and heartbeat monitors as sensors"
 arch:
   - armhf
   - armv7
@@ -12,12 +12,24 @@ init: false
 startup: application
 boot: auto
 hassio_api: true
+homeassistant_api: true
 options:
   api_key: ""
-  log_level: "info"
   ilert_email: ""
-
+  mqtt_host: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_password: ""
+  poll_interval: 300
+  log_level: "info"
+  calendar_entity: ""
 schema:
   api_key: str
-  log_level: list(debug|info|warning|error)?
   ilert_email: str
+  mqtt_host: str
+  mqtt_port: port
+  mqtt_user: str
+  mqtt_password: password
+  poll_interval: int?
+  log_level: list(debug|info|warning|error)?
+  calendar_entity: str?
