@@ -35,7 +35,7 @@ schema:
   calendar_entity: str?
 
 # Pre-built images from GitHub Container Registry
-image:
+image: ghcr.io/ainsey11/ilert-{arch}:3.3.2
   armhf: ghcr.io/ainsey11/ilert-armhf:3.3.2
   armv7: ghcr.io/ainsey11/ilert-armv7:3.3.2
   aarch64: ghcr.io/ainsey11/ilert-aarch64:3.3.2
