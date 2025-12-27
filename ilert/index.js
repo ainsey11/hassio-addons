@@ -56,6 +56,11 @@ if (!validation.isValid) {
   logger.warning(validation.message);
 }
 
+// Log any configuration warnings
+if (validation.warnings && validation.warnings.length > 0) {
+  validation.warnings.forEach((warning) => logger.warning(warning));
+}
+
 // Global state
 let mqttClient = null;
 let ilertAPI = null;
