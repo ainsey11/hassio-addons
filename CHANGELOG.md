@@ -7,6 +7,31 @@ and each addon follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## Azure Dynamic DNS
+
+### [1.0.0] - 2025-12-27
+
+### Added
+
+- **Initial release** of Azure Dynamic DNS addon
+- **Multi-domain support**: Update multiple A and AAAA records across different Azure DNS zones
+- **IPv4 and IPv6 support**: Configurable support for both IPv4 (A records) and IPv6 (AAAA records)
+- **IP change detection**: Only updates DNS when your IP actually changes
+- **Configurable intervals**: Set how often to check for IP changes (default: 5 minutes)
+- **MQTT integration with auto-discovery**: All sensors automatically appear in Home Assistant
+  - Service status binary sensor
+  - Current and previous IPv4/IPv6 address sensors
+  - Last update timestamp sensor
+  - Per-domain status sensors
+- **Calendar integration**: Optional logging of DNS updates to Home Assistant Local Calendar
+  - Detailed event descriptions showing which records changed and their new values
+  - 15-minute calendar events for easy tracking
+- **Multiple IP services**: Uses multiple external services for reliable IP detection
+- **Comprehensive error handling**: Robust error handling with retry logic
+- **Detailed logging**: Configurable log levels (debug, info, warning, error)
+
+---
+
 ## iLert Integration
 
 ### [3.3.1] - 2025-12-27
