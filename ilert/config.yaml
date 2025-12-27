@@ -33,3 +33,7 @@ schema:
   poll_interval: int?
   log_level: list(debug|info|warning|error)?
   calendar_entity: str?
+
+# Pre-built images from GitHub Container Registry
+# Remove this line to build locally instead
+image: ghcr.io/ainsey11/ilert-{arch}:3.3.1
