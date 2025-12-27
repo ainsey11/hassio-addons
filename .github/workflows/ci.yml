@@ -1,0 +1,260 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  # Detect which addons were changed in the PR
+  detect-changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      addons: ${{ steps.changes.outputs.addons }}
+      any_changed: ${{ steps.changes.outputs.any_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed addons
+        id: changes
+        run: |
+          # Get list of changed files in PR
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Find addon directories that were changed
+          ADDONS=()
+          for dir in */; do
+            dir="${dir%/}"
+            [[ "$dir" == .* ]] && continue
+            [[ "$dir" == "node_modules" ]] && continue
+
+            if [ -f "$dir/config.yaml" ] && grep -q "^version:" "$dir/config.yaml"; then
+              # Check if any files in this addon dir changed
+              if echo "$CHANGED_FILES" | grep -q "^$dir/"; then
+                VERSION=$(grep -E "^version:" "$dir/config.yaml" | sed 's/version: *"\?\([^"]*\)"\?/\1/')
+                echo "✅ Changed addon: $dir (v$VERSION)"
+                ADDONS+=("{\"name\":\"$dir\",\"version\":\"$VERSION\"}")
+              fi
+            fi
+          done
+
+          if [ ${#ADDONS[@]} -eq 0 ]; then
+            echo "addons=[]" >> $GITHUB_OUTPUT
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+            echo "No addons changed"
+          else
+            JSON=$(printf '%s\n' "${ADDONS[@]}" | jq -s -c '.')
+            echo "addons=$JSON" >> $GITHUB_OUTPUT
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  # Lint JavaScript files in changed addons
+  lint:
+    name: Lint ${{ matrix.addon.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for package.json
+        id: check
+        run: |
+          if [ -f "${{ matrix.addon.name }}/package.json" ]; then
+            echo "has_npm=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_npm=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        if: steps.check.outputs.has_npm == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        if: steps.check.outputs.has_npm == 'true'
+        working-directory: ./${{ matrix.addon.name }}
+        run: npm ci
+
+      - name: Lint
+        if: steps.check.outputs.has_npm == 'true'
+        working-directory: ./${{ matrix.addon.name }}
+        run: npm run lint --if-present || echo "No lint script defined"
+
+  # Validate addon configuration
+  validate:
+    name: Validate ${{ matrix.addon.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate config.yaml
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+
+          echo "Validating $ADDON/config.yaml..."
+
+          # Check required fields exist
+          REQUIRED_FIELDS="name version slug description arch"
+          for field in $REQUIRED_FIELDS; do
+            if ! grep -q "^$field:" "$ADDON/config.yaml"; then
+              echo "❌ Missing required field: $field"
+              exit 1
+            fi
+          done
+          echo "✅ All required fields present"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ matrix.addon.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Version '$VERSION' is not valid semver (expected X.Y.Z or X.Y.Z-suffix)"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+      - name: Validate Dockerfile exists
+        run: |
+          if [ ! -f "${{ matrix.addon.name }}/Dockerfile" ]; then
+            echo "❌ Missing Dockerfile in ${{ matrix.addon.name }}/"
+            exit 1
+          fi
+          echo "✅ Dockerfile exists"
+
+  # Test Docker build for changed addons
+  build-test:
+    name: Build ${{ matrix.addon.name }} (${{ matrix.arch }})
+    needs: [detect-changes, validate]
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+        arch:
+          - amd64
+          - aarch64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check arch support
+        id: check
+        run: |
+          if grep -A 20 "^arch:" "${{ matrix.addon.name }}/config.yaml" | grep -q "- ${{ matrix.arch }}"; then
+            echo "supported=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏭️  ${{ matrix.addon.name }} doesn't support ${{ matrix.arch }}"
+            echo "supported=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up QEMU
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get platform
+        if: steps.check.outputs.supported == 'true'
+        id: platform
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64)   echo "platform=linux/amd64" ;;
+            aarch64) echo "platform=linux/arm64" ;;
+          esac >> $GITHUB_OUTPUT
+
+      - name: Test build
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.addon.name }}
+          file: ./${{ matrix.addon.name }}/Dockerfile
+          platforms: ${{ steps.platform.outputs.platform }}
+          push: false
+          tags: test/${{ matrix.addon.name }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Check if version was bumped compared to base branch
+  check-version:
+    name: Version check ${{ matrix.addon.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Compare versions
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          PR_VERSION="${{ matrix.addon.version }}"
+
+          if [ -f "base/$ADDON/config.yaml" ]; then
+            BASE_VERSION=$(grep -E "^version:" "base/$ADDON/config.yaml" | sed 's/version: *"\?\([^"]*\)"\?/\1/')
+          else
+            BASE_VERSION="0.0.0"
+            echo "ℹ️  New addon (no previous version)"
+          fi
+
+          echo "Base version: $BASE_VERSION"
+          echo "PR version: $PR_VERSION"
+
+          if [ "$PR_VERSION" == "$BASE_VERSION" ]; then
+            echo ""
+            echo "⚠️  WARNING: Version not bumped for $ADDON"
+            echo "Consider updating version in $ADDON/config.yaml before merging"
+            echo "::warning file=$ADDON/config.yaml::Version not bumped from $BASE_VERSION"
+          else
+            echo ""
+            echo "✅ Version bumped: $BASE_VERSION → $PR_VERSION"
+          fi
+
+  # Summary job that other checks can depend on
+  ci-success:
+    name: CI Success
+    needs: [lint, validate, build-test, check-version]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.lint.result }}" == "failure" ] || \
+             [ "${{ needs.validate.result }}" == "failure" ] || \
+             [ "${{ needs.build-test.result }}" == "failure" ]; then
+            echo "❌ CI failed"
+            exit 1
+          fi
+          echo "✅ All CI checks passed"

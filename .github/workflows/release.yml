@@ -1,0 +1,328 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "*/config.yaml"
+      - "*/Dockerfile"
+      - "*/**.js"
+      - "*/**.json"
+      - "*/**.sh"
+      - "*/**.yaml"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # Detect which addons changed and need releasing
+  detect-changes:
+    name: Detect addon changes
+    runs-on: ubuntu-latest
+    outputs:
+      addons: ${{ steps.changes.outputs.addons }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed addons
+        id: changes
+        run: |
+          # Find all addon directories (have config.yaml with version)
+          ADDONS=()
+
+          for dir in */; do
+            dir="${dir%/}"
+            # Skip hidden dirs and common non-addon dirs
+            [[ "$dir" == .* ]] && continue
+            [[ "$dir" == "node_modules" ]] && continue
+
+            if [ -f "$dir/config.yaml" ]; then
+              # Check it has a version (confirms it's an addon)
+              if grep -q "^version:" "$dir/config.yaml"; then
+                VERSION=$(grep -E "^version:" "$dir/config.yaml" | sed 's/version: *"\?\([^"]*\)"\?/\1/')
+                TAG="${dir}-v${VERSION}"
+
+                # Check if this tag already exists
+                if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+                  echo "✅ New version detected: $dir v$VERSION"
+                  ADDONS+=("{\"name\":\"$dir\",\"version\":\"$VERSION\"}")
+                else
+                  echo "⏭️  Tag $TAG already exists, skipping $dir"
+                fi
+              fi
+            fi
+          done
+
+          # Output as JSON array
+          if [ ${#ADDONS[@]} -eq 0 ]; then
+            echo "addons=[]" >> $GITHUB_OUTPUT
+            echo "No addons to release"
+          else
+            JSON=$(printf '%s\n' "${ADDONS[@]}" | jq -s -c '.')
+            echo "addons=$JSON" >> $GITHUB_OUTPUT
+            echo "Addons to release: $JSON"
+          fi
+
+  # Create releases for changed addons
+  release:
+    name: Release ${{ matrix.addon.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.addons != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+    outputs:
+      released: ${{ steps.create.outputs.released }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get addon info
+        id: info
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          NAME=$(grep -E "^name:" "$ADDON/config.yaml" | sed 's/name: *"\?\([^"]*\)"\?/\1/')
+          SLUG=$(grep -E "^slug:" "$ADDON/config.yaml" | sed 's/slug: *"\?\([^"]*\)"\?/\1/')
+          DESC=$(grep -E "^description:" "$ADDON/config.yaml" | sed 's/description: *"\?\([^"]*\)"\?/\1/')
+
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "slug=$SLUG" >> $GITHUB_OUTPUT
+          echo "description=$DESC" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          VERSION="${{ matrix.addon.version }}"
+
+          # Find previous tag for this addon
+          PREV_TAG=$(git tag -l "${ADDON}-v*" --sort=-v:refname | head -1)
+
+          {
+            echo "## ${{ steps.info.outputs.name }} v${VERSION}"
+            echo ""
+            echo "${{ steps.info.outputs.description }}"
+            echo ""
+            echo "### Changes"
+            echo ""
+
+            if [ -n "$PREV_TAG" ]; then
+              git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" -- "$ADDON/" || echo "- Various improvements"
+            else
+              echo "🎉 Initial release!"
+              echo ""
+              git log --pretty=format:"- %s (%h)" -- "$ADDON/" | head -15
+            fi
+
+            echo ""
+            echo ""
+            echo "### Installation"
+            echo ""
+            echo "Add this repository to Home Assistant:"
+            echo ""
+            echo "[![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2F${{ github.repository_owner }}%2F${{ github.event.repository.name }})"
+            echo ""
+            echo "Or manually add: \`https://github.com/${{ github.repository }}\`"
+
+            if [ -n "$PREV_TAG" ]; then
+              echo ""
+              echo "---"
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${{ matrix.addon.name }}-v${{ matrix.addon.version }}"
+            fi
+          } > changelog.md
+
+          cat changelog.md
+
+      - name: Create Release
+        id: create
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.addon.name }}-v${{ matrix.addon.version }}
+          name: "${{ steps.info.outputs.name }} v${{ matrix.addon.version }}"
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+
+      - name: Mark as released
+        run: echo "released=true" >> $GITHUB_OUTPUT
+
+  # Build multi-arch Docker images for released addons
+  build:
+    name: Build ${{ matrix.addon.name }} (${{ matrix.arch }})
+    needs: [detect-changes, release]
+    if: needs.detect-changes.outputs.addons != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+        arch:
+          - amd64
+          - aarch64
+          - armv7
+          - armhf
+          - i386
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check arch support
+        id: check
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          ARCH="${{ matrix.arch }}"
+
+          # Check if addon supports this architecture
+          if grep -A 20 "^arch:" "$ADDON/config.yaml" | grep -q "- $ARCH"; then
+            echo "✅ $ADDON supports $ARCH"
+            echo "supported=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏭️  $ADDON does not support $ARCH, skipping"
+            echo "supported=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up QEMU
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get build args
+        if: steps.check.outputs.supported == 'true'
+        id: args
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          ARCH="${{ matrix.arch }}"
+
+          # Map HA arch to Docker platform
+          case "$ARCH" in
+            amd64)   PLATFORM="linux/amd64" ;;
+            aarch64) PLATFORM="linux/arm64" ;;
+            armv7)   PLATFORM="linux/arm/v7" ;;
+            armhf)   PLATFORM="linux/arm/v6" ;;
+            i386)    PLATFORM="linux/386" ;;
+          esac
+          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
+
+          # Get base image from build.yaml
+          BASE=""
+          if [ -f "$ADDON/build.yaml" ]; then
+            BASE=$(awk '/build_from:/,/^[^ ]/' "$ADDON/build.yaml" | grep "$ARCH:" | sed 's/.*: *//' | tr -d '"' | head -1)
+          fi
+
+          # Default base image if not found
+          if [ -z "$BASE" ]; then
+            BASE="ghcr.io/home-assistant/${ARCH}-base:3.19"
+          fi
+          echo "base_image=$BASE" >> $GITHUB_OUTPUT
+          echo "Using base image: $BASE"
+
+      - name: Build and push
+        if: steps.check.outputs.supported == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.addon.name }}
+          file: ./${{ matrix.addon.name }}/Dockerfile
+          platforms: ${{ steps.args.outputs.platform }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:latest
+          build-args: |
+            BUILD_FROM=${{ steps.args.outputs.base_image }}
+            BUILD_ARCH=${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.addon.name }}
+            org.opencontainers.image.version=${{ matrix.addon.version }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            io.hass.type=addon
+            io.hass.arch=${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sign image with Sigstore
+        if: steps.check.outputs.supported == 'true'
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          # Install cosign
+          curl -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /tmp/cosign
+          chmod +x /tmp/cosign
+
+          # Sign the image (keyless signing with GitHub OIDC)
+          /tmp/cosign sign --yes ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}
+          echo "✅ Signed ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}"
+
+  # Update config.yaml with image references (enables pre-built images)
+  update-config:
+    name: Update ${{ matrix.addon.name }} config
+    needs: [detect-changes, build]
+    if: needs.detect-changes.outputs.addons != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1 # Avoid git conflicts
+      matrix:
+        addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update config with image references
+        run: |
+          ADDON="${{ matrix.addon.name }}"
+          VERSION="${{ matrix.addon.version }}"
+          REPO_OWNER="${{ github.repository_owner }}"
+
+          cd "$ADDON"
+
+          # Check if image key already exists
+          if ! grep -q "^image:" config.yaml; then
+            # Add image configuration
+            echo "" >> config.yaml
+            echo "# Pre-built images from GitHub Container Registry" >> config.yaml
+            echo "# Remove this line to build locally instead" >> config.yaml
+            echo "image: ghcr.io/${REPO_OWNER}/${ADDON}-{arch}:${VERSION}" >> config.yaml
+            echo "Added image config to $ADDON/config.yaml"
+          else
+            # Update existing image reference
+            sed -i "s|^image:.*|image: ghcr.io/${REPO_OWNER}/${ADDON}-{arch}:${VERSION}|" config.yaml
+            echo "Updated image reference in $ADDON/config.yaml"
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git pull --rebase  # Get any other addon updates
+
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add ${{ matrix.addon.name }}/config.yaml
+            git commit -m "chore(${{ matrix.addon.name }}): add pre-built image v${{ matrix.addon.version }}"
+            git push
+            echo "✅ Updated ${{ matrix.addon.name }}/config.yaml with image reference"
+          fi
