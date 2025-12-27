@@ -72,17 +72,13 @@ class AzureDDNS {
 
   async checkAndUpdateIP() {
     try {
-      const {
-        newIPv4,
-        newIPv6,
-        ipv4Changed,
-        ipv6Changed,
-      } = await checkIPChanges(
-        this.currentIPv4,
-        this.currentIPv6,
-        this.config,
-        this.logger
-      );
+      const { newIPv4, newIPv6, ipv4Changed, ipv6Changed } =
+        await checkIPChanges(
+          this.currentIPv4,
+          this.currentIPv6,
+          this.config,
+          this.logger
+        );
 
       // Store previous IPs for MQTT publishing
       const previousIPv4 = this.currentIPv4;
@@ -147,12 +143,12 @@ class AzureDDNS {
       }
     } catch (error) {
       this.logger.error(`Failed to update DNS records: ${error.message}`);
-      
+
       // Update domain status for each domain to error
       for (const domain of this.config.domains) {
         publishDomainStatus(domain.zone, "error", this.logger, error.message);
       }
-      
+
       throw error;
     }
   }
