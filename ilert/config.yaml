@@ -1,5 +1,5 @@
 name: "iLert Integration"
-version: "3.3.0"
+version: "3.3.1"
 slug: "ilert"
 description: "iLert integration - exposes on-call, incidents, alerts and heartbeat monitors as sensors"
 arch:
