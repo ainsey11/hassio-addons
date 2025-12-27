@@ -238,7 +238,7 @@ jobs:
 
       - name: Build and push
         if: steps.check.outputs.supported == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./${{ matrix.addon.name }}
           file: ./${{ matrix.addon.name }}/Dockerfile
