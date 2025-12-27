@@ -25,7 +25,7 @@ Each addon is independent with its own version in `config.yaml`.
 ### Prerequisites
 
 - Docker
-- VS Code with Remote - Containers extension
+- VS Code with devcontainers extension
 - A Home Assistant Supervisor environment (or use the devcontainer)
 
 ### Getting Started
