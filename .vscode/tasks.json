@@ -146,6 +146,20 @@
         "panel": "shared"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Full Development Reload",
+      "type": "shell",
+      "command": "echo '🔄 Starting full development reload...' && (ha addons uninstall \"local_${input:addonName}\" 2>/dev/null || echo '   ℹ️  Addon not installed') && echo '🔄 Reloading addon repository...' && bash ${workspaceFolder}/.devcontainer/poststart.sh && echo '📦 Installing addon...' && ha addons install \"local_${input:addonName}\" && echo '✅ Full reload complete!'",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
@@ -153,7 +167,7 @@
       "id": "addonName",
       "type": "pickString",
       "description": "Name of addon (to add your addon to this list, please edit .vscode/tasks.json)",
-      "options": ["ilert"]
+      "options": ["ilert", "azure-ddns"]
     }
   ]
 }

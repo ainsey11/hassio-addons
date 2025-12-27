@@ -1,0 +1,25 @@
+{
+  "name": "hassio-azure-ddns-addon",
+  "version": "1.0.0",
+  "description": "Azure Dynamic DNS addon for Home Assistant",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "homeassistant",
+    "azure",
+    "ddns",
+    "dynamic-dns",
+    "addon"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@azure/arm-dns": "^5.1.0",
+    "@azure/identity": "^3.4.0",
+    "axios": "^1.6.2",
+    "mqtt": "^5.3.5"
+  }
+}

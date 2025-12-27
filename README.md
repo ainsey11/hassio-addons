@@ -16,20 +16,10 @@ Or manually:
 
 ## Addons
 
-### [iLert Integration](./ilert)
-
-Integrates iLert on-call management with Home Assistant.
-
-**Features:**
-
-- On-call status sensors
-- Alert and incident counts
-- Acknowledge alerts button
-- Mute notifications control
-- Calendar sync
-- Heartbeat monitor status
-
-[📖 Documentation](./ilert/README.md)
+| Addon                                 | Description                                                         | Key Features                                                         | Documentation                                                                |
+| ------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **[Azure Dynamic DNS](./azure-ddns)** | Automatically updates Azure DNS records when your public IP changes | Multi-domain support, IPv4/IPv6, MQTT integration, Calendar logging  | [📖 Overview](./docs/azure-ddns.md) • [📚 Full Docs](./azure-ddns/README.md) |
+| **[iLert Integration](./ilert)**      | Integrates iLert on-call management with Home Assistant             | On-call sensors, Alert controls, Calendar sync, Heartbeat monitoring | [📖 Overview](./docs/ilert.md) • [📚 Full Docs](./ilert/README.md)           |
 
 ## Contributing
 

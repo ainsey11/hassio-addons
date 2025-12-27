@@ -6,8 +6,9 @@
 
 <!-- Which addon(s) does this PR modify? -->
 
+- [ ] `azure-ddns`
 - [ ] `ilert`
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\_\_**
 
 ## Type of Change
 
