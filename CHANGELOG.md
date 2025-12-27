@@ -9,6 +9,22 @@ and each addon follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## Azure Dynamic DNS
 
+### [1.1.0] - 2025-12-27
+
+### Changed
+
+- **Code refactoring for maintainability**: Restructured codebase into modular architecture
+  - Split monolithic `index.js` (637 lines) into organized modules
+  - Created `utils/` directory for configuration, logging, MQTT, and HA API utilities
+  - Created `functions/` directory for IP detection, DNS updates, and calendar integration
+  - Improved error handling and separation of concerns
+
+### [1.0.1] - 2025-12-27
+
+### Updated
+
+- Updated package versions to resolve dependabot warnings
+
 ### [1.0.0] - 2025-12-27
 
 ### Added

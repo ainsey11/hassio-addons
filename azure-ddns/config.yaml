@@ -1,5 +1,5 @@
 name: "Azure Dynamic DNS"
-version: "1.0.1"
+version: "1.1.0"
 slug: "azure-ddns"
 description: "Dynamic DNS updater for Azure DNS zones - automatically updates A records when your public IP changes"
 arch:
