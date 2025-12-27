@@ -1,5 +1,5 @@
 name: "iLert Integration"
-version: "3.3.1"
+version: "3.3.2"
 slug: "ilert"
 description: "iLert integration - exposes on-call, incidents, alerts and heartbeat monitors as sensors"
 arch:
@@ -35,5 +35,9 @@ schema:
   calendar_entity: str?
 
 # Pre-built images from GitHub Container Registry
-# Remove this line to build locally instead
-image: ghcr.io/ainsey11/ilert-{arch}:3.3.1
+image:
+  armhf: ghcr.io/ainsey11/ilert-armhf:3.3.2
+  armv7: ghcr.io/ainsey11/ilert-armv7:3.3.2
+  aarch64: ghcr.io/ainsey11/ilert-aarch64:3.3.2
+  amd64: ghcr.io/ainsey11/ilert-amd64:3.3.2
+  i386: ghcr.io/ainsey11/ilert-i386:3.3.2

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       addon:
-        description: 'Addon to release (leave empty for auto-detect)'
+        description: "Addon to release (leave empty for auto-detect)"
         required: false
         type: string
 
@@ -180,12 +180,24 @@ jobs:
           ADDON="${{ matrix.addon.name }}"
           ARCH="${{ matrix.arch }}"
 
-          # Check if addon supports this architecture
-          if grep -A 20 "^arch:" "$ADDON/config.yaml" | grep -q "- $ARCH"; then
-            echo "✅ $ADDON supports $ARCH"
-            echo "supported=true" >> $GITHUB_OUTPUT
+          echo "Checking if $ADDON supports $ARCH..."
+          echo "Config file: $ADDON/config.yaml"
+
+          # Debug: show the arch section
+          if [ -f "$ADDON/config.yaml" ]; then
+            echo "Architecture section from config.yaml:"
+            grep -A 20 "^arch:" "$ADDON/config.yaml" || echo "No arch section found"
+
+            # Check if addon supports this architecture
+            if grep -A 20 "^arch:" "$ADDON/config.yaml" | grep -q "^[[:space:]]*- $ARCH$"; then
+              echo "✅ $ADDON supports $ARCH"
+              echo "supported=true" >> $GITHUB_OUTPUT
+            else
+              echo "⏭️  $ADDON does not support $ARCH, skipping"
+              echo "supported=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "⏭️  $ADDON does not support $ARCH, skipping"
+            echo "❌ Config file $ADDON/config.yaml not found"
             echo "supported=false" >> $GITHUB_OUTPUT
           fi
 
@@ -204,6 +216,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test registry access
+        if: steps.check.outputs.supported == 'true'
+        run: |
+          echo "Testing registry access..."
+          echo "Actor: ${{ github.actor }}"
+          echo "Registry: ghcr.io"
+          # Test authentication
+          docker images | grep ghcr.io || echo "No GHCR images found locally"
 
       - name: Get build args
         if: steps.check.outputs.supported == 'true'
@@ -257,6 +278,13 @@ jobs:
             io.hass.arch=${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify push success
+        if: steps.check.outputs.supported == 'true'
+        run: |
+          echo "✅ Successfully pushed:"
+          echo "  - ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:${{ matrix.addon.version }}"
+          echo "  - ghcr.io/${{ github.repository_owner }}/${{ matrix.addon.name }}-${{ matrix.arch }}:latest"
 
       - name: Sign image with Sigstore
         if: steps.check.outputs.supported == 'true'
