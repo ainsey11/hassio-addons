@@ -29,6 +29,8 @@ export POLL_INTERVAL=$(bashio::config 'poll_interval')
 
 # Get calendar configuration
 export CALENDAR_ENTITY=$(bashio::config 'calendar_entity')
+export CALENDAR_PERSONAL_ONLY=$(bashio::config 'calendar_personal_only')
+export CALENDAR_DAYS_AHEAD=$(bashio::config 'calendar_days_ahead')
 
 bashio::log.info "MQTT configured: ${MQTT_HOST}:${MQTT_PORT} (user: ${MQTT_USER})"
 bashio::log.info "Poll interval: ${POLL_INTERVAL} seconds"

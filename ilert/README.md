@@ -10,6 +10,9 @@ Home Assistant addon that integrates iLert on-call schedules, alerts and inciden
 - **ilert_email** (required): Your iLert account email
 - **poll_interval** (optional): Data refresh interval in seconds - default: 300 (5 minutes)
 - **log_level** (optional): Logging level (debug, info, warning, error) - default: info
+- **calendar_entity** (optional): Local calendar entity ID for sync - e.g., `calendar.ilert_on_call`
+- **calendar_personal_only** (optional): Only sync your own shifts - default: false
+- **calendar_days_ahead** (optional): Days ahead to sync - default: 28, range: 1-90
 
 ### Calendar Sync (Optional)
 
@@ -33,6 +36,8 @@ The addon can sync your on-call schedule to a Home Assistant Local Calendar, all
 
 3. **Configure the addon**:
    - Set **calendar_entity** to your calendar's entity ID (e.g., `calendar.ilert_on_call`)
+   - Optional: Set **calendar_personal_only** to `true` to only sync your own shifts
+   - Optional: Set **calendar_days_ahead** to control how far in advance to sync (default: 28 days, range: 1-90)
    - Restart the addon
 
 #### How it works

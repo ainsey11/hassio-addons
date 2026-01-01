@@ -1,5 +1,5 @@
 name: "iLert Integration"
-version: "3.3.2"
+version: "3.5.0"
 slug: "ilert"
 description: "iLert integration - exposes on-call, incidents, alerts and heartbeat monitors as sensors"
 arch:
@@ -23,6 +23,8 @@ options:
   poll_interval: 300
   log_level: "info"
   calendar_entity: ""
+  calendar_personal_only: false
+  calendar_days_ahead: 28
 schema:
   api_key: str
   ilert_email: str
@@ -33,3 +35,5 @@ schema:
   poll_interval: int?
   log_level: list(debug|info|warning|error)?
   calendar_entity: str?
+  calendar_personal_only: bool?
+  calendar_days_ahead: int(1,90)?
