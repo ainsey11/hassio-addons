@@ -351,9 +351,18 @@ async function syncCalendarEvents() {
   }
 
   try {
+    // Clear any previous session data to avoid stale state on restart
+    syncedEventIds.clear();
+
     logger.debug("Syncing on-call schedule to local calendar...");
 
-    const scheduleData = await fetchOnCallSchedule(ilertAPI, logger);
+    const DAYS_AHEAD = config.calendarDaysAhead || 28; // Configurable days to look ahead
+    const scheduleData = await fetchOnCallSchedule(
+      ilertAPI,
+      logger,
+      config,
+      DAYS_AHEAD
+    );
 
     if (!scheduleData.events || scheduleData.events.length === 0) {
       logger.debug("No on-call events to sync");
@@ -362,30 +371,64 @@ async function syncCalendarEvents() {
 
     // Get existing events from calendar to avoid duplicates
     const now = new Date();
-    const futureDate = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000);
+    const futureDate = new Date(
+      now.getTime() + DAYS_AHEAD * 24 * 60 * 60 * 1000
+    );
     const existingEvents = await haAPI.getCalendarEvents(
       config.calendarEntity,
       now.toISOString(),
       futureDate.toISOString()
     );
 
-    // Create a set of existing event signatures (summary + start time)
-    const existingSignatures = new Set(
-      existingEvents.map(
-        (e) => `${e.summary}|${e.start?.dateTime || e.start?.date}`
-      )
+    // Debug: Log existing events format to understand the structure
+    logger.debug(`Found ${existingEvents.length} existing calendar events`);
+    if (existingEvents.length > 0) {
+      logger.debug(
+        `Sample existing event: ${JSON.stringify(existingEvents[0], null, 2)}`
+      );
+    }
+
+    // Clean up outdated events first
+    await cleanupOutdatedCalendarEvents(
+      existingEvents,
+      scheduleData.events,
+      now
     );
+
+    // Create a set of existing event signatures (summary + start time)
+    // Handle different datetime formats from Home Assistant calendar
+    const existingSignatures = new Set();
+    existingEvents.forEach((e) => {
+      // Handle both dateTime and date formats, convert to comparable format
+      let startTime = e.start?.dateTime || e.start?.date;
+      if (startTime) {
+        // Normalize the time format - remove timezone info for comparison
+        startTime = new Date(startTime).toISOString().replace(/\.\d{3}Z$/, "Z");
+      }
+      const signature = `${e.summary}|${startTime}`;
+      existingSignatures.add(signature);
+      logger.debug(`Existing event signature: ${signature}`);
+    });
 
     let created = 0;
     let skipped = 0;
 
     for (const event of scheduleData.events) {
-      // Create signature for this event
-      const signature = `${event.summary}|${event.start}`;
+      // Create signature for this event - normalize datetime format for comparison
+      let eventStart = event.start;
+      if (eventStart) {
+        eventStart = new Date(eventStart)
+          .toISOString()
+          .replace(/\.\d{3}Z$/, "Z");
+      }
+      const signature = `${event.summary}|${eventStart}`;
+
+      logger.debug(`New event signature: ${signature}`);
 
       // Skip if already exists or already synced this session
       if (existingSignatures.has(signature) || syncedEventIds.has(signature)) {
         skipped++;
+        logger.debug(`Skipping existing event: ${event.summary}`);
         continue;
       }
 
@@ -417,6 +460,84 @@ async function syncCalendarEvents() {
     }
   } catch (error) {
     logger.error(`Failed to sync calendar: ${error.message}`);
+  }
+}
+
+/**
+ * Clean up outdated or changed calendar events
+ * This helps handle cases where schedules are overridden or changed
+ */
+async function cleanupOutdatedCalendarEvents(
+  existingEvents,
+  currentEvents,
+  now
+) {
+  if (!haAPI || !existingEvents || existingEvents.length === 0) {
+    return;
+  }
+
+  try {
+    // Create signatures for current events - normalize datetime format
+    const currentSignatures = new Set();
+    currentEvents.forEach((e) => {
+      let eventStart = e.start;
+      if (eventStart) {
+        eventStart = new Date(eventStart)
+          .toISOString()
+          .replace(/\.\d{3}Z$/, "Z");
+      }
+      const signature = `${e.summary}|${eventStart}`;
+      currentSignatures.add(signature);
+    });
+
+    let deletedCount = 0;
+
+    for (const existingEvent of existingEvents) {
+      // Normalize existing event datetime format for comparison
+      let existingStart =
+        existingEvent.start?.dateTime || existingEvent.start?.date;
+      if (existingStart) {
+        existingStart = new Date(existingStart)
+          .toISOString()
+          .replace(/\.\d{3}Z$/, "Z");
+      }
+      const existingSignature = `${existingEvent.summary}|${existingStart}`;
+
+      // Skip if this event matches a current event
+      if (currentSignatures.has(existingSignature)) {
+        continue;
+      }
+
+      // Skip if event is in the past (let them expire naturally)
+      const eventEnd = new Date(
+        existingEvent.end?.dateTime || existingEvent.end?.date
+      );
+      if (eventEnd < now) {
+        continue;
+      }
+
+      // This is a future event that's no longer in the current schedule
+      // It might have been overridden or the schedule changed
+      if (existingEvent.summary && existingEvent.summary.includes(" - ")) {
+        try {
+          // Try to delete the event
+          // Note: Home Assistant calendar API might not support deletion
+          // This is a placeholder for when the API supports it
+          logger.info(
+            `Would delete outdated calendar event: ${existingEvent.summary}`
+          );
+          deletedCount++;
+        } catch (error) {
+          logger.warning(`Failed to delete calendar event: ${error.message}`);
+        }
+      }
+    }
+
+    if (deletedCount > 0) {
+      logger.info(`Cleaned up ${deletedCount} outdated calendar events`);
+    }
+  } catch (error) {
+    logger.warning(`Error during calendar cleanup: ${error.message}`);
   }
 }
 

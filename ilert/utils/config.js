@@ -3,12 +3,20 @@
  * @returns {Object} Configuration object
  */
 function getConfig() {
+  const calendarDaysAhead = Math.max(
+    1,
+    Math.min(90, parseInt(process.env.CALENDAR_DAYS_AHEAD) || 28)
+  );
+
   return {
     apiKey: process.env.API_KEY || "",
     logLevel: process.env.LOG_LEVEL || "info",
     ilertEmail: process.env.ILERT_EMAIL || "",
     pollInterval: parseInt(process.env.POLL_INTERVAL) || 300,
     calendarEntity: process.env.CALENDAR_ENTITY || "",
+    calendarPersonalOnly:
+      process.env.CALENDAR_PERSONAL_ONLY === "true" || false,
+    calendarDaysAhead: calendarDaysAhead,
     supervisorToken: process.env.SUPERVISOR_TOKEN || "",
     mqttHost: process.env.MQTT_HOST || "core-mosquitto",
     mqttPort: parseInt(process.env.MQTT_PORT) || 1883,

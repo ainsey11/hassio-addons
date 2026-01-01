@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "data": {
-          "api_key": "iLert API Key",
+          "api_key": "API Key",
           "ilert_email": "iLert Email",
           "mqtt_host": "MQTT Host",
           "mqtt_port": "MQTT Port",
@@ -11,7 +11,9 @@
           "mqtt_password": "MQTT Password",
           "poll_interval": "Poll Interval (seconds)",
           "log_level": "Log Level",
-          "calendar_entity": "Calendar Entity (Optional)"
+          "calendar_entity": "Calendar Entity (Optional)",
+          "calendar_personal_only": "Personal Calendar Only",
+          "calendar_days_ahead": "Calendar Days Ahead"
         },
         "data_description": {
           "api_key": "Your iLert API key (Bearer token). Get it from iLert → Settings → API Keys.",
@@ -22,7 +24,9 @@
           "mqtt_password": "MQTT password configured in Mosquitto addon.",
           "poll_interval": "How often to fetch data from iLert. Default: 300",
           "log_level": "Logging verbosity. Use 'debug' to troubleshoot.",
-          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable."
+          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable.",
+          "calendar_personal_only": "When enabled, only your own on-call shifts (matching the configured iLert email) will be synced to the calendar. When disabled, all team members' shifts are synced.",
+          "calendar_days_ahead": "How many days ahead to fetch and sync calendar events. Default: 28 days. Range: 1-90 days."
         }
       }
     }
@@ -31,7 +35,7 @@
     "step": {
       "init": {
         "data": {
-          "api_key": "iLert API Key",
+          "api_key": "API Key",
           "ilert_email": "iLert Email",
           "mqtt_host": "MQTT Host",
           "mqtt_port": "MQTT Port",
@@ -39,7 +43,9 @@
           "mqtt_password": "MQTT Password",
           "poll_interval": "Poll Interval (seconds)",
           "log_level": "Log Level",
-          "calendar_entity": "Calendar Entity (Optional)"
+          "calendar_entity": "Calendar Entity (Optional)",
+          "calendar_personal_only": "Personal Calendar Only",
+          "calendar_days_ahead": "Calendar Days Ahead"
         },
         "data_description": {
           "api_key": "Your iLert API key (Bearer token). Get it from iLert → Settings → API Keys.",
@@ -50,7 +56,9 @@
           "mqtt_password": "MQTT password configured in Mosquitto addon.",
           "poll_interval": "How often to fetch data from iLert. Default: 300",
           "log_level": "Logging verbosity. Use 'debug' to troubleshoot.",
-          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable."
+          "calendar_entity": "Sync on-call shifts to a Local Calendar. Create one first in Settings → Devices & Services → Add Integration → Local Calendar, then enter entity ID (e.g., calendar.ilert_on_call). Leave empty to disable.",
+          "calendar_personal_only": "When enabled, only your own on-call shifts (matching the configured iLert email) will be synced to the calendar. When disabled, all team members' shifts are synced.",
+          "calendar_days_ahead": "How many days ahead to fetch and sync calendar events. Default: 28 days. Range: 1-90 days."
         }
       }
     }
@@ -91,6 +99,14 @@
     "calendar_entity": {
       "name": "Calendar Entity (Optional)",
       "description": "Sync on-call shifts to a Local Calendar. First create a Local Calendar integration in HA (Settings → Devices & Services → Add Integration → Local Calendar), then enter the entity ID here (e.g., calendar.ilert_on_call). Leave empty to disable calendar sync."
+    },
+    "calendar_personal_only": {
+      "name": "Personal Calendar Only",
+      "description": "When enabled, only your own on-call shifts (matching the configured iLert email) will be synced to the calendar. When disabled (default), all team members' shifts are synced. Requires calendar_entity to be configured."
+    },
+    "calendar_days_ahead": {
+      "name": "Calendar Days Ahead",
+      "description": "How many days ahead to fetch and sync calendar events. Default: 28 days. Recommended range: 7-90 days. Higher values may impact performance."
     }
   }
 }

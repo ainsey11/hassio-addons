@@ -98,6 +98,37 @@ class ILertAPI {
   }
 
   /**
+   * Get on-call information with optional date range
+   * @param {string} from - Start date ISO string (optional)
+   * @param {string} until - End date ISO string (optional)
+   */
+  async getOnCallsInRange(from = null, until = null) {
+    try {
+      const params = {};
+      if (from) params.from = from;
+      if (until) params.until = until;
+
+      const queryString =
+        Object.keys(params).length > 0
+          ? `?${new URLSearchParams(params).toString()}`
+          : "";
+
+      this.logger.debug(`API Call: GET /on-calls${queryString}`);
+      const response = await this.client.get("/on-calls", { params });
+      this.logger.info(
+        `API Response: GET /on-calls${queryString} - Status ${response.status}, Count: ${response.data.length}`
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.warning(
+        `Failed to fetch on-calls with date range (${error.response?.status}), falling back to basic on-calls`
+      );
+      // Fallback to basic on-calls if date range is not supported
+      return this.getOnCalls();
+    }
+  }
+
+  /**
    * Get user by ID
    */
   async getUser(userId) {
