@@ -88,6 +88,7 @@ main() {
     generate_run_sh
     generate_build_yaml
     generate_readme
+    generate_changelog
     generate_translations
 
     print_success "Generated all addon files"
@@ -97,7 +98,8 @@ main() {
     echo "  3. Edit config.yaml with your specific configuration"
     echo "  4. Implement your addon logic in index.js"
     echo "  5. Update README.md with detailed documentation"
-    echo "  6. Test with: ha addons install local_$ADDON_NAME"
+    echo "  6. Update CHANGELOG.md as you add features"
+    echo "  7. Test with: ha addons install local_$ADDON_NAME"
 }
 
 generate_config_yaml() {
@@ -410,6 +412,27 @@ All sensors will automatically appear in Home Assistant via MQTT discovery.
 ## Support
 
 For issues and feature requests, please use the GitHub repository issue tracker.
+EOF
+}
+
+generate_changelog() {
+    cat > "$ADDON_DIR/CHANGELOG.md" << EOF
+# Changelog - $ADDON_TITLE
+
+All notable changes to $ADDON_TITLE addon will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - $(date +%Y-%m-%d)
+
+### Added
+
+- **Initial release** of $ADDON_TITLE addon
+- Basic addon structure and configuration
+- MQTT integration with Home Assistant auto-discovery
+- Comprehensive error handling and logging
+- Configurable log levels (debug, info, warning, error)
 EOF
 }
 
