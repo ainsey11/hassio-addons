@@ -1,130 +1,150 @@
-const fs = require("fs");
-const axios = require("axios");
-const mqtt = require("mqtt");
+const {
+  getConfig,
+  createLogger,
+  connectMqtt,
+  setupAutoDiscovery,
+  publishMeterData,
+  publishStatus,
+} = require("./utils");
 
-class Eswater {
+const { fetchWaterConsumption } = require("./functions");
+
+class ESWater {
   constructor() {
-    this.config = this.loadConfig();
+    this.config = getConfig();
+    this.logger = createLogger(this.config.log_level);
     this.mqttClient = null;
+    this.updateTimer = null;
 
     this.initializeClients();
-    this.startService();
-  }
-
-  loadConfig() {
-    const configPath = "/data/options.json";
-    if (!fs.existsSync(configPath)) {
-      throw new Error("Configuration file not found");
-    }
-
-    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-
-    // Add your configuration validation here
-    // Example:
-    // if (!config.api_key) {
-    //   throw new Error("Missing required configuration: api_key");
-    // }
-
-    return config;
+    // Don't await in constructor - start service after MQTT connects
   }
 
   initializeClients() {
     // Initialize MQTT client
-    const mqttUrl = `mqtt://${this.config.mqtt_host}:${this.config.mqtt_port}`;
-    const mqttOptions = {
-      username: this.config.mqtt_user || undefined,
-      password: this.config.mqtt_password || undefined,
-    };
-
-    this.mqttClient = mqtt.connect(mqttUrl, mqttOptions);
+    this.mqttClient = connectMqtt(this.config, this.logger);
 
     this.mqttClient.on("connect", () => {
-      this.log("info", "MQTT connected");
-      this.setupAutoDiscovery();
-      this.publishStatus("online");
+      setupAutoDiscovery(this.mqttClient, this.logger);
+      publishStatus(this.mqttClient, "online", "", this.logger);
+
+      // Start service after MQTT connects and network is stable
+      this.startService().catch((error) => {
+        this.logger.error(`Failed to start service: ${error.message}`);
+      });
     });
 
     this.mqttClient.on("error", (error) => {
-      this.log("error", `MQTT error: ${error.message}`);
+      this.logger.error(`MQTT error: ${error.message}`);
     });
-  }
-
-  setupAutoDiscovery() {
-    this.log("info", "Setting up MQTT Auto Discovery...");
-
-    // Device info for grouping all sensors
-    const deviceInfo = {
-      identifiers: ["eswater"],
-      name: "Eswater",
-      manufacturer: "Home Assistant Addon",
-      model: "Eswater Service",
-      sw_version: "1.0.0"
-    };
-
-    // Example sensor - replace with your actual sensors
-    this.publishAutoDiscovery("sensor", "eswater_status", {
-      name: "Eswater Status",
-      state_topic: "eswater/status",
-      icon: "mdi:check-circle",
-      device: deviceInfo,
-      unique_id: "eswater_status"
-    });
-
-    this.log("info", "MQTT Auto Discovery setup complete");
-  }
-
-  publishAutoDiscovery(component, objectId, config) {
-    const topic = `homeassistant/${component}/eswater/${objectId}/config`;
-    const payload = JSON.stringify(config);
-    this.mqttClient.publish(topic, payload, { retain: true });
-    this.log("debug", `Published auto-discovery for ${component}.eswater_${objectId}`);
-  }
-
-  publishStatus(status, message = "") {
-    const topic = "eswater/status";
-    const payload = JSON.stringify({
-      status,
-      message,
-      timestamp: new Date().toISOString(),
-    });
-    this.mqttClient.publish(topic, payload, { retain: true });
   }
 
   async startService() {
-    this.log("info", "Eswater service starting...");
+    this.logger.info("ESWater service starting...");
 
-    // Add your main service logic here
-    // Example: periodic data fetching, API calls, etc.
+    // Give network time to stabilize after container start (20 seconds)
+    this.logger.info("Waiting 20 seconds for network to stabilize...");
+    await new Promise((resolve) => setTimeout(resolve, 20000));
+    this.logger.info("Network stabilization complete");
 
-    this.log("info", "Service started successfully");
+    try {
+      // Initial data fetch
+      await this.fetchAndPublishData();
+
+      // Set up periodic updates
+      const updateInterval = (this.config.update_interval || 3600) * 1000; // Convert to milliseconds
+      this.updateTimer = setInterval(() => {
+        this.fetchAndPublishData();
+      }, updateInterval);
+
+      this.logger.info(
+        `Service started successfully. Update interval: ${
+          this.config.update_interval || 3600
+        } seconds`
+      );
+    } catch (error) {
+      this.logger.error(`Failed to start service: ${error.message}`);
+      publishStatus(this.mqttClient, "error", error.message, this.logger);
+    }
   }
 
-  log(level, message) {
-    const timestamp = new Date().toISOString();
-    const logLevel = this.config.log_level || "info";
+  async fetchAndPublishData() {
+    try {
+      this.logger.info("Fetching water consumption data from ESWater API...");
+      publishStatus(
+        this.mqttClient,
+        "fetching",
+        "Fetching water meter data from ESWater API",
+        this.logger
+      );
 
-    const levels = { debug: 0, info: 1, warning: 2, error: 3 };
-    if (levels[level] >= levels[logLevel]) {
-      console.log(`[${timestamp}] [${level.toUpperCase()}] ${message}`);
+      const apiResponse = await fetchWaterConsumption(this.config, this.logger);
+
+      if (apiResponse && apiResponse.success) {
+        // Publish the structured data to MQTT
+        publishMeterData(this.mqttClient, apiResponse, this.logger);
+        publishStatus(
+          this.mqttClient,
+          "online",
+          "Data updated successfully via API",
+          this.logger
+        );
+        this.logger.info("Water consumption data updated successfully");
+
+        // Log the data that was published
+        const data = apiResponse.data;
+        this.logger.info(
+          `Published data - Daily: ${data.dailyUsage}L, Latest: ${data.latestReading}L, Readings: ${data.readingCount}`
+        );
+      } else {
+        const errorMsg = apiResponse?.error || "No data received from API";
+        publishStatus(this.mqttClient, "error", errorMsg, this.logger);
+        this.logger.error(`API fetch failed: ${errorMsg}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch and publish data: ${error.message}`);
+      publishStatus(this.mqttClient, "error", error.message, this.logger);
     }
+  }
+
+  shutdown() {
+    this.logger.info("Shutting down ESWater service...");
+
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+    }
+
+    if (this.mqttClient) {
+      publishStatus(
+        this.mqttClient,
+        "offline",
+        "Service shutting down",
+        this.logger
+      );
+      this.mqttClient.end();
+    }
+
+    this.logger.info("ESWater service shut down complete");
   }
 }
 
-// Handle graceful shutdown
-process.on("SIGINT", () => {
-  console.log("Received SIGINT, shutting down gracefully...");
-  process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-  console.log("Received SIGTERM, shutting down gracefully...");
-  process.exit(0);
-});
-
 // Start the service
 try {
-  new Eswater();
+  const eswater = new ESWater();
+
+  // Handle graceful shutdown signals
+  process.on("SIGINT", () => {
+    console.log("Received SIGINT, shutting down gracefully...");
+    eswater.shutdown();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    console.log("Received SIGTERM, shutting down gracefully...");
+    eswater.shutdown();
+    process.exit(0);
+  });
 } catch (error) {
-  console.error(`Failed to start Eswater: ${error.message}`);
+  console.error(`Failed to start ESWater: ${error.message}`);
   process.exit(1);
 }

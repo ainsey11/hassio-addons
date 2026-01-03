@@ -6,6 +6,7 @@ This repository contains multiple Home Assistant addons. Each addon maintains it
 
 - **[Azure Dynamic DNS](azure-ddns/CHANGELOG.md)** - Dynamic DNS updates for Azure DNS zones
 - **[iLert Integration](ilert/CHANGELOG.md)** - iLert incident management and on-call schedule integration
+  -- **[ESWater Water Consumption Tracking](eswater/CHANGELOG.md)** - Tracks your water consumption from the Essex and Suffolk Water Web interface - requires smart meter
 
 ---
 

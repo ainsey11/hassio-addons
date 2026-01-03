@@ -14,22 +14,18 @@ boot: auto
 hassio_api: true
 homeassistant_api: true
 options:
-  # Add your addon-specific options here
-  # Example:
-  # api_key: ""
-  # host: "localhost"
-  # port: 8080
+  eswater_username: ""
+  eswater_password: ""
+  update_interval: 3600
   mqtt_host: "core-mosquitto"
   mqtt_port: 1883
   mqtt_user: ""
   mqtt_password: ""
   log_level: "info"
 schema:
-  # Define your addon's configuration schema here
-  # Example:
-  # api_key: str
-  # host: str?
-  # port: port?
+  eswater_username: str
+  eswater_password: password
+  update_interval: int?
   mqtt_host: str?
   mqtt_port: port?
   mqtt_user: str?
