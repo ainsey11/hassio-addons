@@ -16,10 +16,11 @@ Or manually:
 
 ## Addons
 
-| Addon                                 | Description                                                         | Key Features                                                         | Documentation                                                                |
-| ------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **[Azure Dynamic DNS](./azure-ddns)** | Automatically updates Azure DNS records when your public IP changes | Multi-domain support, IPv4/IPv6, MQTT integration, Calendar logging  | [📖 Overview](./docs/azure-ddns.md) • [📚 Full Docs](./azure-ddns/README.md) |
-| **[iLert Integration](./ilert)**      | Integrates iLert on-call management with Home Assistant             | On-call sensors, Alert controls, Calendar sync, Heartbeat monitoring | [📖 Overview](./docs/ilert.md) • [📚 Full Docs](./ilert/README.md)           |
+| Addon                                 | Description                                                         | Key Features                                                                  | Documentation                                                                |
+| ------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **[Azure Dynamic DNS](./azure-ddns)** | Automatically updates Azure DNS records when your public IP changes | Multi-domain support, IPv4/IPv6, MQTT integration, Calendar logging           | [📖 Overview](./docs/azure-ddns.md) • [📚 Full Docs](./azure-ddns/README.md) |
+| **[ESWater Smart Meter](./eswater)**  | Monitor Essex & Suffolk Water smart meter consumption               | Daily/hourly usage tracking, MQTT sensors, Auto-discovery, Lockout prevention | [📖 Overview](./docs/eswater.md) • [📚 Full Docs](./eswater/README.md)       |
+| **[iLert Integration](./ilert)**      | Integrates iLert on-call management with Home Assistant             | On-call sensors, Alert controls, Calendar sync, Heartbeat monitoring          | [📖 Overview](./docs/ilert.md) • [📚 Full Docs](./ilert/README.md)           |
 
 ## Contributing
 

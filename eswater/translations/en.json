@@ -1,0 +1,24 @@
+{
+  "configuration": {
+    "mqtt_host": {
+      "name": "MQTT Host",
+      "description": "MQTT broker hostname. Default: core-mosquitto (the official Mosquitto addon). Change if using external MQTT broker."
+    },
+    "mqtt_port": {
+      "name": "MQTT Port",
+      "description": "MQTT broker port. Default: 1883 for standard MQTT. Use 8883 for MQTT over TLS."
+    },
+    "mqtt_user": {
+      "name": "MQTT Username",
+      "description": "MQTT username configured in your Mosquitto addon or external MQTT broker. Leave empty if authentication is disabled."
+    },
+    "mqtt_password": {
+      "name": "MQTT Password",
+      "description": "MQTT password configured in your Mosquitto addon or external MQTT broker. Leave empty if authentication is disabled."
+    },
+    "log_level": {
+      "name": "Log Level",
+      "description": "Logging verbosity. Use 'info' for normal operation, 'debug' to troubleshoot issues, or 'warning' for minimal logging."
+    }
+  }
+}

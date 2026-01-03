@@ -46,9 +46,27 @@ if ! docker exec hassio_supervisor mountpoint -q /data/addons/local/azure-ddns 2
     docker exec hassio_supervisor ln -sf hassio-addons/azure-ddns /data/addons/local/azure-ddns
 fi
 
+# Setup for eswater addon
+echo "Setting up eswater addon..."
+# Remove any existing symlink
+docker exec hassio_supervisor rm -f /data/addons/local/eswater 2>/dev/null || true
+
+# Create a bind mount inside the supervisor container
+docker exec --privileged hassio_supervisor sh -c "
+    mkdir -p /data/addons/local/eswater && \
+    mount --bind /data/addons/local/hassio-addons/eswater /data/addons/local/eswater && \
+    echo 'eswater bind mount created successfully'
+" || echo "Warning: Could not create eswater bind mount. Trying symlink..."
+
+# Fallback: if bind mount fails, try symlink
+if ! docker exec hassio_supervisor mountpoint -q /data/addons/local/eswater 2>/dev/null; then
+    echo "eswater bind mount failed, using symlink fallback..."
+    docker exec hassio_supervisor ln -sf hassio-addons/eswater /data/addons/local/eswater
+fi
+
 # Reload store to detect the addons
 echo "Reloading addon store..."
 ha store reload
 
-echo "Done! Your addons should now be detected as 'local_ilert' and 'local_azure-ddns'"
-echo "Run 'ha addons info local_ilert' or 'ha addons info local_azure-ddns' to verify"
+echo "Done! Your addons should now be detected as 'local_ilert', 'local_azure-ddns', and 'local_eswater'"
+echo "Run 'ha addons info local_ilert', 'ha addons info local_azure-ddns', or 'ha addons info local_eswater' to verify"
