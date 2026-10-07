@@ -190,7 +190,7 @@ jobs:
 
       - name: Test build
         if: steps.check.outputs.supported == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./${{ matrix.addon.name }}
           file: ./${{ matrix.addon.name }}/Dockerfile
