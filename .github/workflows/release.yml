@@ -144,7 +144,7 @@ jobs:
 
       - name: Create Release
         id: create
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ matrix.addon.name }}-v${{ matrix.addon.version }}
           name: "${{ steps.info.outputs.name }} v${{ matrix.addon.version }}"
