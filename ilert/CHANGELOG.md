@@ -5,6 +5,14 @@ All notable changes to iLert Integration addon will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-10-08
+
+### Fixed
+
+- **Calendar sync fail-open on list errors**: If fetching existing calendar events failed (timeouts under Home Assistant load), the addon treated the calendar as empty and re-created every on-call shift each poll. That produced tens of thousands of duplicate `calendar.create_event` calls and could wedge Core.
+  - Listing failures now **abort the sync** (fail closed) instead of creating events
+  - In-memory sync signatures are kept across polls within a process lifetime as a secondary dedup safety net
+
 ## [3.5.0] - 2026-01-01
 
 ### Added

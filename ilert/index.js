@@ -351,8 +351,9 @@ async function syncCalendarEvents() {
   }
 
   try {
-    // Clear any previous session data to avoid stale state on restart
-    syncedEventIds.clear();
+    // Keep syncedEventIds across polls in this process as a secondary dedup
+    // safety net. Clearing it every sync defeated that and forced reliance on
+    // the HA list call, which is exactly what fails under load.
 
     logger.debug("Syncing on-call schedule to local calendar...");
 
@@ -369,16 +370,27 @@ async function syncCalendarEvents() {
       return;
     }
 
-    // Get existing events from calendar to avoid duplicates
+    // Get existing events from calendar to avoid duplicates.
+    // Fail closed: if listing times out / errors, skip creates entirely.
+    // Returning [] on error previously caused unbounded duplicate creates and
+    // wedged Home Assistant (local calendar grew to tens of thousands of events).
     const now = new Date();
     const futureDate = new Date(
       now.getTime() + DAYS_AHEAD * 24 * 60 * 60 * 1000
     );
-    const existingEvents = await haAPI.getCalendarEvents(
-      config.calendarEntity,
-      now.toISOString(),
-      futureDate.toISOString()
-    );
+    let existingEvents;
+    try {
+      existingEvents = await haAPI.getCalendarEvents(
+        config.calendarEntity,
+        now.toISOString(),
+        futureDate.toISOString()
+      );
+    } catch (error) {
+      logger.error(
+        `Aborting calendar sync: cannot list existing events (${error.message}). Skipping creates to avoid duplicates.`
+      );
+      return;
+    }
 
     // Debug: Log existing events format to understand the structure
     logger.debug(`Found ${existingEvents.length} existing calendar events`);
