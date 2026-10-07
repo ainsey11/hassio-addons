@@ -50,7 +50,9 @@ class HomeAssistantAPI {
   }
 
   /**
-   * Get calendar events
+   * Fetch existing calendar events for dedup.
+   * Throws on failure — callers must not treat errors as an empty calendar,
+   * or they will recreate every event and flood Home Assistant.
    * @param {string} entityId - Calendar entity ID
    * @param {string} start - Start datetime ISO string
    * @param {string} end - End datetime ISO string
@@ -65,7 +67,7 @@ class HomeAssistantAPI {
       return response.data || [];
     } catch (error) {
       this.logger.error(`Failed to get calendar events: ${error.message}`);
-      return [];
+      throw error;
     }
   }
 
