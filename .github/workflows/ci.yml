@@ -19,7 +19,7 @@ jobs:
       any_changed: ${{ steps.changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -70,7 +70,7 @@ jobs:
         addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check for package.json
         id: check
@@ -109,7 +109,7 @@ jobs:
         addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate config.yaml
         run: |
@@ -159,7 +159,7 @@ jobs:
           - aarch64
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check arch support
         id: check
@@ -212,10 +212,10 @@ jobs:
         addon: ${{ fromJson(needs.detect-changes.outputs.addons) }}
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Checkout base
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref }}
           path: base
